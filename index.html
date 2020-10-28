@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Perlin Noise</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <canvas id="canvas" width="600" height="600"></canvas>
+    <script>
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+
+function interpolate(a0, a1, w){
+  //normal
+  //return((a1 - a0) * w + a0);
+  //cubic
+  return((a1 - a0) * (3.0 - w * 2.0) * w * w + a0)
+}
+
+//Create random direction vector
+function randomGradient(ix, iy){
+  var random = 2920 * Math.sin(ix * 21942 + iy * 171324 + 8912) * Math.cos(ix * 23157 * iy * 217832 + 9758);
+
+  return({
+    x: Math.cos(random),
+    y: Math.sin(random)
+  })
+}
+
+//Computes the product of the distance and gradient vectors
+function dotGridGradient(ix, iy, x, y){
+  //Get the gradient
+  var gradient = randomGradient(ix, iy);
+
+  //compute the dot-product
+  return(gradient.x + gradient.y);
+}
+
+//Coputes Perlin noies at coordinates
+function noise(x,y){
+  //Cell Coordinates Grid
+  var x0 = Math.floor(x);
+  var x1 = x0 + 1;
+  var y0 = Math.floor(y);
+  var y1 = y0 + 1;
+
+  //Interpolation Weights
+  var sx = x - x0;
+  var sy = y - y0;
+
+  //Interpolate bettween grid point gradients
+  var n0, n1, ix0, ix1, value;
+
+  n0 = dotGridGradient(x0, y0, x, y);
+  n1 = dotGridGradient(x1, y0, x, y);
+  ix0 = interpolate(n0, n1, sx);
+
+  n0 = dotGridGradient(x0, y1, x, y);
+  n1 = dotGridGradient(x1, y1, x, y);
+  ix1 = interpolate(n0, n1, sx);
+
+  value = interpolate(ix0, ix1, sy);
+  return(value);
+}
+
+
+var l = 255, h = 0;
+var imgData = ctx.createImageData(canvas.width, canvas.height);
+for(var i=0; i<imgData.data.length; i+=4){
+  //find x, y of pixle at i
+  var pn = i/4;    //pixle number
+  var y = Math.floor(pn/canvas.width);
+  var x = pn - (y*canvas.width);
+  
+  //Determine Scale
+  var scale = 0.05;
+
+  //Find Perlin Value
+  var value = noise(x*scale, y*scale);
+  value = Math.cos(value)*255;    //Limit the value between 0 and 255
+
+  if(value<l){l=value;}
+  if(value>h){h=value;}
+
+  imgData.data[i+0] = value;
+  imgData.data[i+1] = value;
+  imgData.data[i+2] = value;
+
+  imgData.data[i+0] = 0;
+  imgData.data[i+1] = 0;
+  imgData.data[i+2] = 0;
+  imgData.data[i+3] = 255;
+  if(value>230){imgData.data[i+2]=255;}
+}
+ctx.putImageData(imgData, 0, 0);
+    </script>
+  </body>
+</html>
